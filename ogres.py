@@ -12,15 +12,15 @@ def bias_variable(shape):
 
 def variable_summaries(var, name):
     """Attach a lot of summaries to a Tensor."""
+    tf.histogram_summary(name, var)
     with tf.name_scope('summaries'):
         mean = tf.reduce_mean(var)
         tf.scalar_summary('mean/' + name, mean)
         with tf.name_scope('stddev'):
             stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
-            tf.scalar_summary('sttdev/' + name, stddev)
+            tf.scalar_summary('stddev/' + name, stddev)
             tf.scalar_summary('max/' + name, tf.reduce_max(var))
             tf.scalar_summary('min/' + name, tf.reduce_min(var))
-            tf.histogram_summary(name, var)
 
 class Net:
 
@@ -96,14 +96,14 @@ class Net:
 
         if isinstance(filters, int):
             extent_x = extent_y = extent
-        else if len(extent) == 2:
+        elif len(extent) == 2:
             extent_x, extent_y = extent
         else:
             raise Exception("Wrong format for `extent`")
 
         if isinstance(stride, int):
             stride = [1, stride, stride, 1]
-        else if len(extent) == 4:
+        elif len(extent) == 4:
             stride = stride
         else:
             raise Exception("Wrong format for `stride`")
@@ -116,7 +116,6 @@ class Net:
                     ( extent_x, extent_y,
                     number_of_channels, filters))
                 variable_summaries(weights, layer_name + '/weights')
-                tf.histogram_summary(layer_name + '/weights', weights)
             with tf.name_scope('biases'):
                 biases = bias_variable([filters])
                 variable_summaries(biases, layer_name + '/biases')
@@ -151,7 +150,6 @@ class Net:
                     ( 1, filtersize,
                     number_of_channels, channels))
                 variable_summaries(weights, layer_name + '/weights')
-                tf.histogram_summary(layer_name + '/weights', weights)
             with tf.name_scope('biases'):
                 biases = bias_variable([channels])
                 variable_summaries(biases, layer_name + '/biases')
