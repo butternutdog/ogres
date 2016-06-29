@@ -12,15 +12,15 @@ def bias_variable(shape):
 
 def variable_summaries(var, name):
     """Attach a lot of summaries to a Tensor."""
+    tf.histogram_summary(name, var)
     with tf.name_scope('summaries'):
         mean = tf.reduce_mean(var)
         tf.scalar_summary('mean/' + name, mean)
         with tf.name_scope('stddev'):
             stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
-            tf.scalar_summary('sttdev/' + name, stddev)
+            tf.scalar_summary('stddev/' + name, stddev)
             tf.scalar_summary('max/' + name, tf.reduce_max(var))
             tf.scalar_summary('min/' + name, tf.reduce_min(var))
-            tf.histogram_summary(name, var)
 
 class Net:
 
@@ -33,8 +33,9 @@ class Net:
                 "type": "input"
             }]
 
-    def dense(self, output_dim, act=tf.nn.relu):
-        """Reusable code for making a simple neural net layer.
+    def dense(self, width = 100, act = tf.nn.relu):
+        """
+        Reusable code for making a simple neural net layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
         It also sets up name scoping so that the resultant graph is easy to read, and
         adds a number of summary ops.
@@ -48,10 +49,10 @@ class Net:
         with tf.name_scope(layer_name):
             # This Variable will hold the state of the weights for the layer
             with tf.name_scope('weights'):
-                weights = weight_variable([input_dim, output_dim])
+                weights = weight_variable([input_dim, width])
                 variable_summaries(weights, layer_name + '/weights')
             with tf.name_scope('biases'):
-                biases = bias_variable([output_dim])
+                biases = bias_variable([width])
                 variable_summaries(biases, layer_name + '/biases')
             with tf.name_scope('Wx_plus_b'):
                 preactivate = tf.matmul(input_tensor, weights) + biases
@@ -65,16 +66,16 @@ class Net:
             } )
         return self
 
-    def dropout(self, dropout):
+    def dropout(self, keep_prob=1.0):
         input_tensor = self.layers[-1]["activations"]
-        activations = tf.nn.dropout(input_tensor, dropout)
+        activations = tf.nn.dropout(input_tensor, keep_prob)
         self.layers.append( {
             "activations": activations,
             "type": "dropout"
         } )
         return self
 
-    def conv2(self, filters, extent, stride, act=tf.nn.relu):
+    def conv2d(self, filters, extent, stride, act=tf.nn.relu):
         """
         Adds a 2d convolutional layer to the network.
 
@@ -96,14 +97,14 @@ class Net:
 
         if isinstance(filters, int):
             extent_x = extent_y = extent
-        else if len(extent) == 2:
+        elif len(extent) == 2:
             extent_x, extent_y = extent
         else:
             raise Exception("Wrong format for `extent`")
 
         if isinstance(stride, int):
             stride = [1, stride, stride, 1]
-        else if len(extent) == 4:
+        elif len(extent) == 4:
             stride = stride
         else:
             raise Exception("Wrong format for `stride`")
@@ -116,7 +117,6 @@ class Net:
                     ( extent_x, extent_y,
                     number_of_channels, filters))
                 variable_summaries(weights, layer_name + '/weights')
-                tf.histogram_summary(layer_name + '/weights', weights)
             with tf.name_scope('biases'):
                 biases = bias_variable([filters])
                 variable_summaries(biases, layer_name + '/biases')
@@ -131,8 +131,9 @@ class Net:
             } )
         return self
 
-    def conv1(self, channels, filtersize, act=tf.nn.relu):
-        """Reusable code for making a convolutional neural net layer.
+    def conv1d(self, filters = 12, size = 5, act=tf.nn.relu, stride = 1):
+        """
+        Reusable code for making a convolutional neural net layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
         It also sets up name scoping so that the resultant graph is easy to read, and
         adds a number of summary ops.
@@ -141,19 +142,16 @@ class Net:
         layer_name = "conv" + str(len([l for l in self.layers
             if l["type"]=="conv"]))
         input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:-1].as_list(), 1)
-        number_of_channels = int(input_tensor.get_shape()[-1])
-        STRIDES = [1,1,1,1]
+        input_filters = int(input_tensor.get_shape()[-1])
+        STRIDES = [1, 1, stride, 1]
         # Adding a name scope ensures logical grouping of the layers in the graph.
         with tf.name_scope(layer_name):
             # This Variable will hold the state of the weights for the layer
             with tf.name_scope('weights'):
-                weights = weight_variable(
-                    ( 1, filtersize,
-                    number_of_channels, channels))
+                weights = weight_variable((1, size, input_filters, filters))
                 variable_summaries(weights, layer_name + '/weights')
-                tf.histogram_summary(layer_name + '/weights', weights)
             with tf.name_scope('biases'):
-                biases = bias_variable([channels])
+                biases = bias_variable([filters])
                 variable_summaries(biases, layer_name + '/biases')
             convs = tf.nn.conv2d(input_tensor, weights, STRIDES, 'SAME',
                         use_cudnn_on_gpu=True, name=layer_name + "/conv")
@@ -166,7 +164,7 @@ class Net:
             } )
         return self
 
-    def pool1(self, size, stride):
+    def pool1d(self, size=2, stride=2):
         input_tensor = self.layers[-1]["activations"]
         activations = tf.nn.max_pool(
             input_tensor, [1, 1, size, 1],
