@@ -181,6 +181,7 @@ class Net:
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
         It also sets up name scoping so that the resultant graph is easy to read, and
         adds a number of summary ops.
+        http://www.cv-foundation.org/openaccess/content_cvpr_2015/app/2B_004.pdf
         """
         input_tensor = self.layers[-1]["activations"]
         layer_name = "rec_conv1d" + str(len([l for l in self.layers
