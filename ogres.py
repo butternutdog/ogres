@@ -2,7 +2,7 @@ import tensorflow as tf
 
 def weight_variable(shape):
     """Create a weight variable with appropriate initialization."""
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape, stddev=0.1) # Maybe look at Saxe paper for weight initialization later...
     return tf.Variable(initial)
 
 def bias_variable(shape):
@@ -23,7 +23,13 @@ def variable_summaries(var, name):
             tf.scalar_summary('min/' + name, tf.reduce_min(var))
 
 class Net:
-
+    """
+    Class for easy definition of a neural net graph.
+    Most methods add a layer to the graph, and also sets up name 
+    scoping so that the resultant graph is easy to read, and
+    adds a number of summary ops.
+    """ 
+    
     def __init__(self, inlayer):
         if(isinstance(inlayer, dict)):
             self.layers = inlayer
@@ -33,12 +39,10 @@ class Net:
                 "type": "input"
             }]
 
-    def dense(self, width = 100, act = tf.nn.relu):
+    def dense(self, width=100, act=tf.nn.relu):
         """
-        Reusable code for making a simple neural net layer.
+        Fully connected layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
-        It also sets up name scoping so that the resultant graph is easy to read, and
-        adds a number of summary ops.
         """
         input_tensor = self.layers[-1]["activations"]
         layer_name = "dense" + str(len([l for l in self.layers
@@ -65,6 +69,17 @@ class Net:
             "type": "dense"
             } )
         return self
+    
+    def reshape(self, shape=[]):
+        if len(shape) == 0:
+            return self
+        input_tensor = self.layers[-1]["activations"]
+        activations = tf.reshape(input_tensor, shape)
+        self.layers.append( {
+            "activations": activations,
+            "type": "reshape"
+        } )
+        return self
 
     def dropout(self, keep_prob=1.0):
         input_tensor = self.layers[-1]["activations"]
@@ -75,14 +90,14 @@ class Net:
         } )
         return self
 
-    def conv2d(self, filters, extent, stride, act=tf.nn.relu):
+    
+    def conv2d(self, filters=12, size=[3,3], act=tf.nn.relu, stride=1):
         """
-        Adds a 2d convolutional layer to the network.
-
+        Convolutional layer in 2 dimensions.
+        
         Args:
         `filters: int` -- Number of filter channels in the output.
-        `extent: int | (int, int)` -- The spatial extent of the filters. If
-            `extent` is just a single number, the filter is assumed to be square.
+        `size: (int, int)` -- The spatial extent of the filters.
         `stride: int | [int, int, int, int]` -- Step length when sliding the filter.
             Strides are ordered as `[batch, in_height, in_width, in_channels]`. If
             `stride` is just a single number, it is interpreted as `[1, stride, stride, 1]`
@@ -93,29 +108,16 @@ class Net:
         layer_name = "conv" + str(len([l for l in self.layers
             if l["type"]=="conv"]))
         input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:-1].as_list(), 1)
-        number_of_channels = int(input_tensor.get_shape()[-1])
-
-        if isinstance(filters, int):
-            extent_x = extent_y = extent
-        elif len(extent) == 2:
-            extent_x, extent_y = extent
-        else:
-            raise Exception("Wrong format for `extent`")
-
+        input_filters = int(input_tensor.get_shape()[-1])
+         
         if isinstance(stride, int):
             stride = [1, stride, stride, 1]
-        elif len(extent) == 4:
-            stride = stride
-        else:
-            raise Exception("Wrong format for `stride`")
 
         # Adding a name scope ensures logical grouping of the layers in the graph.
         with tf.name_scope(layer_name):
             # This Variable will hold the state of the weights for the layer
             with tf.name_scope('weights'):
-                weights = weight_variable(
-                    ( extent_x, extent_y,
-                    number_of_channels, filters))
+                weights = weight_variable((size[0], size[1], input_filters, filters))
                 variable_summaries(weights, layer_name + '/weights')
             with tf.name_scope('biases'):
                 biases = bias_variable([filters])
@@ -130,39 +132,10 @@ class Net:
             "type": "conv"
             } )
         return self
-
-    def conv1d(self, filters = 12, size = 5, act=tf.nn.relu, stride = 1):
-        """
-        Reusable code for making a convolutional neural net layer.
-        It does a matrix multiply, bias add, and then uses relu to nonlinearize.
-        It also sets up name scoping so that the resultant graph is easy to read, and
-        adds a number of summary ops.
-        """
-        input_tensor = self.layers[-1]["activations"]
-        layer_name = "conv" + str(len([l for l in self.layers
-            if l["type"]=="conv"]))
-        input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:-1].as_list(), 1)
-        input_filters = int(input_tensor.get_shape()[-1])
-        STRIDES = [1, 1, stride, 1]
-        # Adding a name scope ensures logical grouping of the layers in the graph.
-        with tf.name_scope(layer_name):
-            # This Variable will hold the state of the weights for the layer
-            with tf.name_scope('weights'):
-                weights = weight_variable((1, size, input_filters, filters))
-                variable_summaries(weights, layer_name + '/weights')
-            with tf.name_scope('biases'):
-                biases = bias_variable([filters])
-                variable_summaries(biases, layer_name + '/biases')
-            convs = tf.nn.conv2d(input_tensor, weights, STRIDES, 'SAME',
-                        use_cudnn_on_gpu=True, name=layer_name + "/conv")
-            activations = act(convs + biases)
-        self.layers.append( {
-            "activations": activations,
-            "weights": weights,
-            "biases": biases,
-            "type": "conv"
-            } )
-        return self
+    
+    def conv1d(self, filters=12, size=5, act=tf.nn.relu, stride=1):
+        
+        return self.conv2d(filters=filters,size=[1,size], act=act, stride=[1,1,stride,1])
 
     def pool1d(self, size=2, stride=2):
         input_tensor = self.layers[-1]["activations"]
@@ -175,12 +148,10 @@ class Net:
             } )
         return self 
 
-    def rec_conv1d(self, filters = 12, size = 5, unrollings = 3, input_act=tf.nn.relu, rec_act=tf.nn.relu):
+    def rec_conv1d(self, filters=12, size=5, unrollings=3, input_act=tf.nn.relu, rec_act=tf.nn.relu):
         """
         Reusable code for making a convolutional neural net layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
-        It also sets up name scoping so that the resultant graph is easy to read, and
-        adds a number of summary ops.
         http://www.cv-foundation.org/openaccess/content_cvpr_2015/app/2B_004.pdf
         """
         input_tensor = self.layers[-1]["activations"]
@@ -224,7 +195,7 @@ class Net:
                 "type": "rec_conv1d"})
         return self
     
-    def lstm(self, size = 100, layers = 1, keep_prob = 1, forget_bias = 1.0):
+    def lstm(self, size=100, layers=1, keep_prob=1, forget_bias=1.0):
         """
         size: LSTM layer width
         layers: Number of layers
@@ -261,9 +232,8 @@ class Net:
             return self
  
     def bn(self, act=tf.nn.relu):
-        """Reusable code for making a simple neural net layer.
-           Same as layer function, but with batch normalization,
-           see: http://arxiv.org/pdf/1502.03167v3.pdf
+        """Batch normalization.
+           See: http://arxiv.org/pdf/1502.03167v3.pdf
            Based on implementation found at: 
            http://www.r2rt.com/posts/implementations/2016-03-29-implementing-batch-normalization-tensorflow/
         """
@@ -296,4 +266,5 @@ class Net:
         return self
 
     def output(self):
+        """Returns output from last layer"""
         return self.layers[-1]["activations"]
