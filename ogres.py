@@ -199,7 +199,8 @@ class Net:
         """
         size: LSTM layer width
         layers: Number of layers
-        forget_bias: initialize forget bias, defaults to 1
+        forget_bias: initialize forget bias, defaults to 1, see http://www.jmlr.org/proceedings/papers/v37/jozefowicz15.pdf
+        For a great overview of LSTMs, see http://colah.github.io/posts/2015-08-Understanding-LSTMs/
         """
         layer_name = "lstm" + str(len([l for l in self.layers
             if l["type"]=="lstm"]))
