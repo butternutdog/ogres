@@ -90,7 +90,6 @@ class Net:
         } )
         return self
 
-    
     def conv2d(self, filters=12, size=[3,3], act=tf.nn.relu, stride=1):
         """
         Convolutional layer in 2 dimensions.
@@ -233,10 +232,11 @@ class Net:
             return self
  
     def bn(self, act=tf.nn.relu):
-        """Batch normalization.
-           See: http://arxiv.org/pdf/1502.03167v3.pdf
-           Based on implementation found at: 
-           http://www.r2rt.com/posts/implementations/2016-03-29-implementing-batch-normalization-tensorflow/
+        """
+        Batch normalization.
+        See: http://arxiv.org/pdf/1502.03167v3.pdf
+        Based on implementation found at: 
+        http://www.r2rt.com/posts/implementations/2016-03-29-implementing-batch-normalization-tensorflow/
         """
         # Adding a name scope ensures logical grouping of the layers in the graph.
 
@@ -269,3 +269,9 @@ class Net:
     def output(self):
         """Returns output from last layer"""
         return self.layers[-1]["activations"]
+
+def layer(new_layer):
+    """
+    Functions with this decorator can be used as layers in the network. 
+    """
+    setattr(Net, new_layer.func_name, new_layer)
