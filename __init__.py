@@ -5,7 +5,6 @@ class tf:
             pass
 
 from basics import *
-from layers import *
 
 __all__ = ['layers']
 

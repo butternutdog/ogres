@@ -5,6 +5,7 @@ pooling layers etc.
 
 from .. import layer, tf
 
+
 @layer
 def conv2d(self, filters=12, size=[3,3], act=tf.nn.relu, stride=1):
     """

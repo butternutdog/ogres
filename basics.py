@@ -1,3 +1,15 @@
+"""
+Basics
+======
+
+Fundamental building blocks for ogres networks.
+
+Must be imported before any other ogre components
+are imported.
+"""
+
+
+from . import tf
 
 class Net:
     """
