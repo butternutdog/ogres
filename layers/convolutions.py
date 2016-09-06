@@ -3,7 +3,7 @@ Convolutional layers, and associated functions like
 pooling layers etc.
 """
 
-from .. import layer, tf
+from .. import *
 
 
 @layer
