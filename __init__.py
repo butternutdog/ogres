@@ -1,9 +1,4 @@
-#import tensorflow as tf
-class tf:
-    class nn:
-        def relu():
-            pass
-
+import tensorflow as tf
 from basics import *
 
 __all__ = ['layers']
