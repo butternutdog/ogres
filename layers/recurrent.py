@@ -7,7 +7,7 @@ Thin wrappers around tensorflow's recurrent layers.
 
 from .. import layer, tf
 
-
+@layer
 def lstm(self, size=100, layers=1, keep_prob=1, forget_bias=1.0):
     """
     size: LSTM layer width
