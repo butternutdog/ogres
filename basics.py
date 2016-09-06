@@ -9,7 +9,7 @@ are imported.
 """
 
 
-from . import tf
+from . import tf, weight_variable, bias_variable, variable_summaries
 
 class Net:
     """
