@@ -3,7 +3,7 @@
 from setuptools import setup
 import ogres
 
-requirements = ["tensorflow>=0.10"]
+requirements = [] # Requires tensorflow, but no easy install script exist
 version = ogres.__version__
 
 
