@@ -3,8 +3,10 @@ Convolutional layers, and associated functions like
 pooling layers etc.
 """
 
-from .. import layer, tf, weight_variable, bias_variable, variable_summaries
+import functools
+import operator
 
+from .. import layer, tf, weight_variable, bias_variable, variable_summaries
 
 @layer
 def conv2d(self, filters=12, size=[3,3], act=tf.nn.relu, stride=1):
@@ -23,7 +25,7 @@ def conv2d(self, filters=12, size=[3,3], act=tf.nn.relu, stride=1):
     input_tensor = self.layers[-1]["activations"]
     layer_name = "conv" + str(len([l for l in self.layers
         if l["type"]=="conv"]))
-    input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:-1].as_list(), 1)
+    input_dim = functools.reduce(operator.mul, input_tensor.get_shape()[1:-1].as_list(), 1)
     input_filters = int(input_tensor.get_shape()[-1])
         
     if isinstance(stride, int):
@@ -101,7 +103,7 @@ def rec_conv1d(self, filters=12, size=5, unrollings=3, input_act=tf.nn.relu, rec
     input_tensor = self.layers[-1]["activations"]
     layer_name = "rec_conv1d" + str(len([l for l in self.layers
         if l["type"]=="rec_conv1d"]))
-    input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:-1].as_list(), 1)
+    input_dim = functools.reduce(operator.mul, input_tensor.get_shape()[1:-1].as_list(), 1)
     input_filters = int(input_tensor.get_shape()[-1])
     STRIDES = [1, 1, 1, 1]
     # Adding a name scope ensures logical grouping of the layers in the graph.
