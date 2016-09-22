@@ -18,7 +18,7 @@ setup(
    maintainer="ogres@butternutdog.com",
    description="Thin tensorflow wrapper. Requires tensorflow",
    long_description=None,
-   packages=["ogres"],
+   packages=["ogres", "ogres.layers"],
    install_requires=requirements,
    scripts=[],
    platforms="any",
