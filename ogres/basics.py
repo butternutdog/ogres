@@ -149,4 +149,4 @@ def layer(new_layer):
     """
     Functions with this decorator can be used as layers in the network. 
     """
-    setattr(Net, new_layer.func_name, new_layer)
+    setattr(Net, new_layer.__name__, new_layer)
