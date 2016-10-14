@@ -72,7 +72,7 @@ def conv1d(self, filters=12, size=5, act=tf.nn.relu, stride=1):
         "activations": tf.expand_dims(input_tensor, 1),
         "type": "expand_dim"
         } )
-    conv = self.conv2d(filters=filters,size=[1,size], act=act, stride=[1,1,stride,1])
+    self.conv2d(filters=filters,size=[1,size], act=act, stride=[1,1,stride,1])
     output_layer = self.layers[-1]["activations"]
     self.layers.append( {
         "activations": tf.squeeze(output_layer, [1]),
@@ -137,4 +137,21 @@ def rec_conv1d(self, filters=12, size=5, unrollings=3, input_act=tf.nn.relu, rec
     self.layers.append({
             "activations": self.layers[-1]["activations"],
             "type": "rec_conv1d"})
+    return self
+
+
+@layer
+def res_conv1d(self, filters=12, size=5, act=tf.nn.relu, stride=1):
+    input_tensor = self.layers[-1]["activations"]
+    layer_name = "res_conv1d" + str(len([l for l in self.layers
+        if l["type"]=="res_conv1d"]))
+    with tf.name_scope(layer_name):
+        self.conv1d(filters=filters, size=size, act=act, stride=stride)
+        self.conv1d(filters=filters, size=size, act=act, stride=stride)
+        residual = self.layers[-1]["activations"]
+        output_layer = tf.add(input_tensor, residual)
+    self.layers.append( {
+        "activations": output_layer,
+        "type": "res_conv1d"
+        } )
     return self
