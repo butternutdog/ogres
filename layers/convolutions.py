@@ -67,32 +67,41 @@ def pool2d(self, size=[2,2], stride=2):
 @layer
 def conv1d(self, filters=12, size=5, act=tf.nn.relu, stride=1):
     input_tensor = self.layers[-1]["activations"]
+    layer_name = "conv1d" + str(len([l for l in self.layers
+        if l["type"]=="conv1d_expand_dim"]))
     assert len(input_tensor.get_shape()) == 3
-    self.layers.append( {
-        "activations": tf.expand_dims(input_tensor, 1),
-        "type": "expand_dim"
-        } )
-    self.conv2d(filters=filters,size=[1,size], act=act, stride=[1,1,stride,1])
-    output_layer = self.layers[-1]["activations"]
-    self.layers.append( {
-        "activations": tf.squeeze(output_layer, [1]),
-        "type": "squeeze_dim"
-        } )
+
+    with tf.name_scope(layer_name):
+        self.layers.append( {
+            "activations": tf.expand_dims(input_tensor, 1),
+            "type": "conv1d_expand_dim"
+            } )
+        self.conv2d(filters=filters,size=[1,size], act=act, stride=[1,1,stride,1])
+        output_layer = self.layers[-1]["activations"]
+        self.layers.append( {
+            "activations": tf.squeeze(output_layer, [1]),
+            "type": "conv1d_squeeze_dim"
+            } )
     return self
 
 
 @layer
 def pool1d(self, size=2, stride=2):
     input_tensor = self.layers[-1]["activations"]
-    expand_tensor = tf.expand_dims(input_tensor, 1)
-    pooled = tf.nn.max_pool(
-        expand_tensor, [1, 1, size, 1],
-        [1, 1, stride, 1], 'SAME')
-    squeezed = tf.squeeze(pooled, [1])
-    self.layers.append( {
-        "activations": squeezed,
-        "type": "pool"
-        } )
+    layer_name = "pool1d" + str(len([l for l in self.layers
+        if l["type"]=="pool1d"]))
+    assert len(input_tensor.get_shape()) == 3
+    
+    with tf.name_scope(layer_name):
+        expand_tensor = tf.expand_dims(input_tensor, 1)
+        pooled = tf.nn.max_pool(
+            expand_tensor, [1, 1, size, 1],
+            [1, 1, stride, 1], 'SAME')
+        squeezed = tf.squeeze(pooled, [1])
+        self.layers.append( {
+            "activations": squeezed,
+            "type": "pool1d"
+            } )
     return self 
 
 
