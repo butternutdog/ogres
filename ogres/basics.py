@@ -8,6 +8,9 @@ Must be imported before any other ogre components
 are imported.
 """
 
+import functools
+import operator
+
 import tensorflow as tf
 
 def weight_variable(shape):
@@ -60,7 +63,7 @@ class Net:
         input_tensor = self.layers[-1]["activations"]
         layer_name = "dense" + str(len([l for l in self.layers
             if l["type"]=="dense"]))
-        input_dim = reduce(lambda p,f: p*f, input_tensor.get_shape()[1:].as_list(), 1)
+        input_dim = functools.reduce(operator.mul, input_tensor.get_shape()[1:].as_list(), 1)
         input_tensor = tf.reshape(input_tensor, (-1, input_dim))
         # Adding a name scope ensures logical grouping of the layers in the graph.
         with tf.name_scope(layer_name):
@@ -146,4 +149,4 @@ def layer(new_layer):
     """
     Functions with this decorator can be used as layers in the network. 
     """
-    setattr(Net, new_layer.func_name, new_layer)
+    setattr(Net, new_layer.__name__, new_layer)
