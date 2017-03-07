@@ -27,15 +27,15 @@ def bias_variable(shape):
 
 def variable_summaries(var, name):
     """Attach a lot of summaries to a Tensor."""
-    tf.histogram_summary(name, var)
+    tf.summary.histogram(name, var)
     with tf.name_scope('summaries'):
         mean = tf.reduce_mean(var)
-        tf.scalar_summary('mean/' + name, mean)
+        tf.summary.scalar('mean/' + name, mean)
         with tf.name_scope('stddev'):
             stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
-            tf.scalar_summary('stddev/' + name, stddev)
-            tf.scalar_summary('max/' + name, tf.reduce_max(var))
-            tf.scalar_summary('min/' + name, tf.reduce_min(var))
+            tf.summary.scalar('stddev/' + name, stddev)
+            tf.summary.scalar('max/' + name, tf.reduce_max(var))
+            tf.summary.scalar('min/' + name, tf.reduce_min(var))
 
 
 class Net:
